@@ -1,195 +1,392 @@
-# FastAPI LangGraph Agent Template
+# FastAPI LangGraph Agent Production Ready Template
 
-A production-ready FastAPI template for building AI agent applications with LangGraph integration. This template provides a robust foundation for building scalable, secure, and maintainable AI agent services.
+A production-ready template for building AI agents using FastAPI and LangGraph with comprehensive monitoring, database integration, and containerized deployment.
 
-## 🌟 Features
+## Features
 
-- **Production-Ready Architecture**
+- **FastAPI Framework**: High-performance async API framework
+- **LangGraph Integration**: Advanced AI agent workflows
+- **PostgreSQL Database**: Integrated database service with Docker
+- **Authentication & Authorization**: JWT-based security
+- **Rate Limiting**: Built-in API rate limiting
+- **Monitoring Stack**: Prometheus + Grafana + cAdvisor
+- **Production Ready**: Docker containerization with health checks
+- **Environment Management**: Separate configs for dev/staging/production
+- **Logging**: Structured logging with rotation
+- **Security**: Non-root user, secure secrets management
 
-  - FastAPI for high-performance async API endpoints
-  - LangGraph integration for AI agent workflows
-  - Langfuse for LLM observability and monitoring
-  - Structured logging with environment-specific formatting
-  - Rate limiting with configurable rules
-  - PostgreSQL for data persistence
-  - Docker and Docker Compose support
-  - Prometheus metrics and Grafana dashboards for monitoring
+## Architecture
 
-- **Security**
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   FastAPI App   │────│   PostgreSQL    │    │   Monitoring    │
+│   (Port 8000)   │    │   (Port 5432)   │    │   Stack         │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+         │                       │                       │
+         └───────────────────────┼───────────────────────┘
+                                 │
+                    ┌─────────────────┐
+                    │  Docker Network │
+                    │   (monitoring)  │
+                    └─────────────────┘
+```
 
-  - JWT-based authentication
-  - Session management
-  - Input sanitization
-  - CORS configuration
-  - Rate limiting protection
+## Prerequisites
 
-- **Developer Experience**
+- Docker Desktop 4.0+
+- Docker Compose v2.0+
+- Git
 
-  - Environment-specific configuration
-  - Comprehensive logging system
-  - Clear project structure
-  - Type hints throughout
-  - Easy local development setup
+## Quick Start
 
-- **Model Evaluation Framework**
-  - Automated metric-based evaluation of model outputs
-  - Integration with Langfuse for trace analysis
-  - Detailed JSON reports with success/failure metrics
-  - Interactive command-line interface
-  - Customizable evaluation metrics
-
-## 🚀 Quick Start
-
-### Prerequisites
-
-- Python 3.13+
-- PostgreSQL ([see Database setup](#database-setup))
-- Docker and Docker Compose (optional)
-
-### Environment Setup
-
-1. Clone the repository:
+### 1. Clone the Repository
 
 ```bash
 git clone <repository-url>
-cd <project-directory>
+cd fastapi-langgraph-agent-production-ready-template
 ```
 
-2. Create and activate a virtual environment:
+### 2. Environment Configuration
+
+Copy and configure environment files:
 
 ```bash
-uv sync
+# Copy environment template
+cp .env.example .env.development
+cp .env.example .env.production
+
+# Edit development environment
+nano .env.development
 ```
 
-3. Copy the example environment file:
+**Required Environment Variables:**
 
 ```bash
-cp .env.example .env.[development|staging|production] # e.g. .env.development
+# LLM Settings (Required)
+LLM_API_KEY="your-openai-api-key-here"  # Get from https://platform.openai.com/api-keys
+
+# Langfuse Settings (Optional - for observability)
+LANGFUSE_PUBLIC_KEY="your-langfuse-public-key"
+LANGFUSE_SECRET_KEY="your-langfuse-secret-key"
+
+# JWT Settings (Auto-generated for development)
+JWT_SECRET_KEY="dummy-secret-key-for-development-123456"
 ```
 
-4. Update the `.env` file with your configuration (see `.env.example` for reference)
-
-### Database setup
-
-1. Create a PostgreSQL database (e.g Supabase or local PostgreSQL)
-2. Update the database connection string in your `.env` file:
+### 3. Start Services
 
 ```bash
-POSTGRES_URL="postgresql://:your-db-password@POSTGRES_HOST:POSTGRES_PORT/POSTGRES_DB"
+# Start all services (app + database + monitoring)
+docker-compose up --build -d
+
+# Or start in foreground to see logs
+docker-compose up --build
 ```
 
-- You don't have to create the tables manually, the ORM will handle that for you.But if you faced any issues,please run the `schemas.sql` file to create the tables manually.
-
-### Running the Application
-
-#### Local Development
-
-1. Install dependencies:
+### 4. Verify Installation
 
 ```bash
-uv sync
+# Check all services status
+docker-compose ps
+
+# Test API health
+curl http://localhost:8000/health
+
+# View application logs
+docker-compose logs app -f
 ```
 
-2. Run the application:
+## Service Management
+
+### Start Services
 
 ```bash
-make [dev|staging|production] # e.g. make dev
+# Start all services in background
+docker-compose up -d
+
+# Start with rebuild
+docker-compose up --build -d
+
+# Start specific service
+docker-compose up postgres -d
 ```
 
-1. Go to Swagger UI:
+### Stop Services
 
 ```bash
-http://localhost:8000/docs
+# Stop all services
+docker-compose down
+
+# Stop and remove volumes (WARNING: This deletes database data)
+docker-compose down -v
+
+# Stop specific service
+docker-compose stop app
 ```
 
-#### Using Docker
-
-1. Build and run with Docker Compose:
+### View Logs
 
 ```bash
-make docker-build-env ENV=[development|staging|production] # e.g. make docker-build-env ENV=development
-make docker-run-env ENV=[development|staging|production] # e.g. make docker-run-env ENV=development
+# View all logs
+docker-compose logs -f
+
+# View specific service logs
+docker-compose logs app -f
+docker-compose logs postgres -f
+
+# View last 100 lines
+docker-compose logs --tail=100 app
 ```
 
-2. Access the monitoring stack:
+### Restart Services
 
 ```bash
-# Prometheus metrics
-http://localhost:9090
+# Restart all services
+docker-compose restart
 
-# Grafana dashboards
-http://localhost:3000
-Default credentials:
-- Username: admin
-- Password: admin
+# Restart specific service
+docker-compose restart app
 ```
 
-The Docker setup includes:
+## Database Management
 
-- FastAPI application
-- PostgreSQL database
-- Prometheus for metrics collection
-- Grafana for metrics visualization
-- Pre-configured dashboards for:
-  - API performance metrics
-  - Rate limiting statistics
-  - Database performance
-  - System resource usage
+### PostgreSQL Integration
 
-## 📊 Model Evaluation
+The template includes a fully integrated PostgreSQL service:
 
-The project includes a robust evaluation framework for measuring and tracking model performance over time. The evaluator automatically fetches traces from Langfuse, applies evaluation metrics, and generates detailed reports.
+- **Service Name**: `postgres`
+- **Database**: `agentdb`
+- **User**: `agent`
+- **Password**: `1234` (development only)
+- **Port**: `5432`
 
-### Running Evaluations
-
-You can run evaluations with different options using the provided Makefile commands:
+### Database Operations
 
 ```bash
-# Interactive mode with step-by-step prompts
-make eval [ENV=development|staging|production]
+# Connect to database from host machine
+psql -h localhost -p 5432 -U agent -d agentdb
 
-# Quick mode with default settings (no prompts)
-make eval-quick [ENV=development|staging|production]
+# Connect to database from inside container
+docker-compose exec postgres psql -U agent -d agentdb
 
-# Evaluation without report generation
-make eval-no-report [ENV=development|staging|production]
+# Run database migrations (if using Alembic)
+docker-compose exec app alembic upgrade head
+
+# Create database backup
+docker-compose exec postgres pg_dump -U agent agentdb > backup.sql
+
+# Restore database backup
+docker-compose exec -T postgres psql -U agent agentdb < backup.sql
 ```
 
-### Evaluation Features
+### Database Connection String
 
-- **Interactive CLI**: User-friendly interface with colored output and progress bars
-- **Flexible Configuration**: Set default values or customize at runtime
-- **Detailed Reports**: JSON reports with comprehensive metrics including:
-  - Overall success rate
-  - Metric-specific performance
-  - Duration and timing information
-  - Trace-level success/failure details
+```bash
+# From within Docker network (containers)
+POSTGRES_URL=postgresql://agent:1234@postgres:5432/agentdb
 
-### Customizing Metrics
-
-Evaluation metrics are defined in `evals/metrics/prompts/` as markdown files:
-
-1. Create a new markdown file (e.g., `my_metric.md`) in the prompts directory
-2. Define the evaluation criteria and scoring logic
-3. The evaluator will automatically discover and apply your new metric
-
-### Viewing Reports
-
-Reports are automatically generated in the `evals/reports/` directory with timestamps in the filename:
-
-```
-evals/reports/evaluation_report_YYYYMMDD_HHMMSS.json
+# From host machine
+POSTGRES_URL=postgresql://agent:1234@localhost:5432/agentdb
 ```
 
-Each report includes:
+## Development
 
-- High-level statistics (total trace count, success rate, etc.)
-- Per-metric performance metrics
-- Detailed trace-level information for debugging
+### Local Development Setup
 
-## 🔧 Configuration
+```bash
+# Install uv (if not already installed)
+pip install uv
 
-The application uses a flexible configuration system with environment-specific settings:
+# Create virtual environment and install dependencies
+uv venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+uv sync  # Install all dependencies from pyproject.toml and uv.lock
 
-- `.env.development`
--
+# Start only database service
+docker-compose up postgres -d
+
+# Run app locally with auto-reload
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+### Environment-Specific Deployment
+
+```bash
+# Development
+APP_ENV=development docker-compose up --build -d
+
+# Staging
+APP_ENV=staging docker-compose up --build -d
+
+# Production
+APP_ENV=production docker-compose up --build -d
+```
+
+## Monitoring & Observability
+
+### Access Monitoring Services
+
+- **API Documentation**: http://localhost:8000/docs
+- **Health Check**: http://localhost:8000/health
+- **Grafana Dashboard**: http://localhost:3000 (admin/admin)
+- **Prometheus**: http://localhost:9090
+- **cAdvisor**: http://localhost:8080
+
+### Key Metrics
+
+- API Response Times
+- Request Rates
+- Error Rates
+- Database Connections
+- System Resources (CPU, Memory, Disk)
+- Container Health Status
+
+## API Endpoints
+
+### Core Endpoints
+
+```bash
+# Health Check
+GET /health
+
+# API Documentation
+GET /docs
+GET /redoc
+
+# Authentication
+POST /api/v1/auth/login
+POST /api/v1/auth/refresh
+
+# Agent Endpoints
+POST /api/v1/chat
+POST /api/v1/chat/stream
+GET /api/v1/messages
+```
+
+### Testing Endpoints
+
+```bash
+# Test chat endpoint
+curl -X POST "http://localhost:8000/api/v1/chat" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -d '{"message": "Hello, agent!"}'
+
+# Test health endpoint
+curl http://localhost:8000/health
+```
+
+## Security
+
+### Production Security Checklist
+
+- [ ] Change default PostgreSQL password
+- [ ] Use strong JWT secret keys
+- [ ] Set proper CORS origins
+- [ ] Enable HTTPS in production
+- [ ] Use secrets management (Docker secrets, K8s secrets)
+- [ ] Regular security updates
+- [ ] Monitor security logs
+
+### Environment Variables Security
+
+```bash
+# Development - use dummy values
+JWT_SECRET_KEY="dummy-secret-key-for-development-123456"
+
+# Production - use strong, random secrets
+JWT_SECRET_KEY="$(openssl rand -base64 32)"
+```
+
+## Troubleshooting
+
+### Common Issues
+
+**1. Database Connection Failed**
+
+```bash
+# Check if PostgreSQL is running
+docker-compose ps postgres
+
+# View PostgreSQL logs
+docker-compose logs postgres -f
+
+# Test connection
+docker-compose exec app ping postgres
+```
+
+**2. App Service Unhealthy**
+
+```bash
+# Check app logs
+docker-compose logs app -f
+
+# Verify health endpoint
+curl http://localhost:8000/health
+
+# Check if all environment variables are set
+docker-compose exec app env | grep -E "(LLM_API_KEY|JWT_SECRET_KEY)"
+```
+
+**3. Port Already in Use**
+
+```bash
+# Check what's using the port
+lsof -i :8000
+
+# Stop conflicting services
+docker stop $(docker ps -q)
+```
+
+**4. Environment File Not Found**
+
+```bash
+# Verify .env files exist
+ls -la .env*
+
+# Check Docker Compose configuration
+docker-compose config
+```
+
+### Reset Everything
+
+```bash
+# Nuclear option - reset everything
+docker-compose down -v --remove-orphans
+docker system prune -a
+docker-compose up --build -d
+```
+
+## Production Deployment
+
+### Docker Compose Production
+
+```bash
+# Set production environment
+export APP_ENV=production
+
+# Deploy with production config
+docker-compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d
+```
+
+### Kubernetes Deployment
+
+```bash
+# Apply Kubernetes manifests
+kubectl apply -f k8s/
+
+# Check deployment status
+kubectl get pods -l app=fastapi-agent
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests
+5. Submit a pull request
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
